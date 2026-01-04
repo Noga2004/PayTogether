@@ -1,166 +1,197 @@
-import { Box, Button, Card, Stack, Typography } from "@mui/material";
+import React, { useState } from 'react';
+import { Box, Button, Card, Stack, Typography, Alert } from '@mui/material';
 import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
+import Logo from './Logo';
 
-interface SignInProps {
-    setCurrentView: (view: 'landing' | 'signup' | 'signin') => void;
-}
+const SignIn: React.FC = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-const SignIn = ({ setCurrentView }: SignInProps) => {
-    return <Box sx={{ 
-        minHeight: '100vh', 
-        bgcolor: '#fafafa',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 3
-        }}>
-        <Box sx={{ width: '100%', maxWidth: 500 }}>
-            <Button 
-            onClick={() => setCurrentView('landing')}
-            startIcon={<ArrowRight size={20} style={{ transform: 'rotate(180deg)' }} />}
-            sx={{ color: '#666', textTransform: 'none', mb: 5, fontWeight: 500 }}
-            >
-            Back to Home
-            </Button>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-            <Box sx={{ textAlign: 'center', mb: 5 }}>
-            <Box sx={{ width: 90, height: 90, position: 'relative', mx: 'auto', mb: 3 }}>
-                <Box sx={{
-                width: 70,
-                height: 70,
-                borderRadius: '50%',
-                bgcolor: '#8B9D83',
-                position: 'absolute',
-                left: 0,
-                top: 10
-                }} />
-                <Box sx={{
-                width: 70,
-                height: 70,
-                borderRadius: '50%',
-                bgcolor: '#B8A9D4',
-                position: 'absolute',
-                right: 0,
-                top: 0
-                }} />
-            </Box>
+    try {
+      await authService.login({ email, password });
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
-                Welcome back
-            </Typography>
-            <Typography variant="h6" sx={{ color: '#666', fontWeight: 400, mb: 2 }}>
-                Sign in to access your shared expenses
-            </Typography>
-            </Box>
+  return (
+    <Box sx={{ 
+      minHeight: '100vh', 
+      bgcolor: '#fafafa',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      p: 3
+    }}>
+      <Box sx={{ width: '100%', maxWidth: 500 }}>
+        <Button 
+          onClick={() => navigate('/')}
+          startIcon={<ArrowRight size={20} style={{ transform: 'rotate(180deg)' }} />}
+          sx={{ color: '#666', textTransform: 'none', mb: 5, fontWeight: 500 }}
+        >
+          Back to Home
+        </Button>
 
-            <Card elevation={0} sx={{ p: 5, borderRadius: 3, border: '1px solid #e5e5e5' }}>
+        <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Box sx={{ mb: 3 }}>
+            <Logo size={90}/>
+          </Box>
+
+          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
+            Welcome back
+          </Typography>
+          <Typography variant="h6" sx={{ color: '#666', fontWeight: 400, mb: 2 }}>
+            Sign in to access your shared expenses
+          </Typography>
+        </Box>
+
+        <Card elevation={0} sx={{ p: 5, borderRadius: 3, border: '1px solid #e5e5e5' }}>
+          <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={3.5}>
-                <Box>
-                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1.5 }}>
-                    Email address
+              {error && (
+                <Alert severity="error" sx={{ borderRadius: 2 }}>
+                  {error}
+                </Alert>
+              )}
+
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1.5, color: '#333' }}>
+                  Email address
                 </Typography>
                 <Box sx={{
-                    border: '2px solid #e5e5e5',
-                    borderRadius: 2.5,
-                    p: 2.5,
-                    '&:focus-within': {
+                  border: '2px solid #e5e5e5',
+                  borderRadius: 2.5,
+                  p: 2.5,
+                  bgcolor: 'white',
+                  '&:focus-within': {
                     borderColor: '#8B9D83',
                     boxShadow: '0 0 0 4px rgba(139, 157, 131, 0.1)'
-                    }
+                  }
                 }}>
-                    <input
+                  <input
                     type="email"
                     placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
                     style={{
-                        border: 'none',
-                        outline: 'none',
-                        width: '100%',
-                        fontSize: '1rem',
-                        fontFamily: 'inherit',
-                        backgroundColor: 'transparent'
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit',
+                      backgroundColor: 'transparent',
+                      color: '#333'
                     }}
-                    />
+                  />
                 </Box>
-                </Box>
+              </Box>
 
-                <Box>
-                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1.5 }}>
-                    Password
+              <Box>
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1.5, color: '#333' }}>
+                  Password
                 </Typography>
                 <Box sx={{
-                    border: '2px solid #e5e5e5',
-                    borderRadius: 2.5,
-                    p: 2.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    '&:focus-within': {
+                  border: '2px solid #e5e5e5',
+                  borderRadius: 2.5,
+                  p: 2.5,
+                  bgcolor: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  '&:focus-within': {
                     borderColor: '#8B9D83',
                     boxShadow: '0 0 0 4px rgba(139, 157, 131, 0.1)'
-                    }
+                  }
                 }}>
-                    <input
+                  <input
                     type="password"
                     placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
                     style={{
-                        border: 'none',
-                        outline: 'none',
-                        width: '100%',
-                        fontSize: '1rem',
-                        fontFamily: 'inherit',
-                        backgroundColor: 'transparent'
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit',
+                      backgroundColor: 'transparent',
+                      color: '#333'
                     }}
-                    />
+                  />
                 </Box>
                 <Box sx={{ textAlign: 'right', mt: 1.5 }}>
-                    <Button sx={{ 
+                  <Button sx={{ 
                     color: '#666', 
                     textTransform: 'none',
                     p: 0,
+                    fontSize: '0.9rem',
                     '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' }
-                    }}>
+                  }}>
                     Forgot password?
-                    </Button>
+                  </Button>
                 </Box>
-                </Box>
+              </Box>
 
-                <Button
+              <Button
+                type="submit"
                 variant="contained"
                 fullWidth
+                disabled={loading}
                 sx={{
-                    bgcolor: '#8B9D83',
-                    py: 2,
-                    fontSize: '1.05rem',
-                    textTransform: 'none',
-                    borderRadius: 2.5,
-                    fontWeight: 600,
-                    mt: 1,
-                    '&:hover': { bgcolor: '#7a8c72' }
+                  bgcolor: '#8B9D83',
+                  py: 2,
+                  fontSize: '1.05rem',
+                  textTransform: 'none',
+                  borderRadius: 2.5,
+                  fontWeight: 600,
+                  mt: 1,
+                  '&:hover': { bgcolor: '#7a8c72' },
+                  '&:disabled': { bgcolor: '#ccc' }
                 }}
-                >
-                Sign in
-                </Button>
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </Button>
             </Stack>
-            </Card>
+          </Box>
+        </Card>
 
-            <Box sx={{ textAlign: 'center', mt: 4 }}>
-            <Typography variant="body1" sx={{ color: '#666' }}>
-                Don't have an account?{' '}
-                <Button 
-                onClick={() => setCurrentView('signup')}
-                sx={{ 
-                    color: '#000', 
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    p: 0,
-                    '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' }
-                }}
-                >
-                Sign up
-                </Button>
-            </Typography>
-            </Box>
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <Typography variant="body1" sx={{ color: '#666', fontSize: '0.95rem' }}>
+            Don't have an account?{' '}
+            <Button 
+              onClick={() => navigate('/signup')}
+              sx={{ 
+                color: '#000', 
+                textTransform: 'none',
+                fontWeight: 600,
+                p: 0,
+                fontSize: '0.95rem',
+                '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' }
+              }}
+            >
+              Sign up
+            </Button>
+          </Typography>
         </Box>
-    </Box>    
+      </Box>
+    </Box>
+  );
 };
 
 export default SignIn;
