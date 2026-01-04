@@ -1,24 +1,15 @@
 import React from 'react';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Button, 
-  Card, 
-  Avatar,
-  Stack
-} from '@mui/material';
+import { Box, Container, Typography, Button, Card, Avatar, Stack } from '@mui/material';
 import { Users, Receipt, PieChart, ArrowRight, CheckCircle } from 'lucide-react';
-import SignIn from './SignIn';
+import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
-import SignUp from './SignUp';
 
-const HomePage = () => {
-  const [currentView, setCurrentView] = React.useState('landing');
+const HomePage: React.FC = () => {
+  const navigate = useNavigate();
 
-  const Landing = () => (
+  return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
-      <Navbar setCurrentView={setCurrentView}/>
+      <Navbar showAuthButtons={true} />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 14 }, pb: 8 }}>
         <Box sx={{ textAlign: 'center', position: 'relative' }}>
@@ -86,7 +77,7 @@ const HomePage = () => {
             sx={{ mb: 6, position: 'relative', zIndex: 1 }}
           >
             <Button
-              onClick={() => setCurrentView('signup')}
+              onClick={() => navigate('/signup')}
               variant="contained"
               endIcon={<ArrowRight size={20} />}
               sx={{
@@ -129,6 +120,7 @@ const HomePage = () => {
             direction="row" 
             spacing={4} 
             justifyContent="center" 
+            flexWrap="wrap"
             sx={{ position: 'relative', zIndex: 1 }}
           >
             {[
@@ -272,17 +264,6 @@ const HomePage = () => {
         </Container>
       </Box>
     </Box>
-  );
-
-  <SignIn setCurrentView={setCurrentView} />
-  
-
-  return (
-    <>
-      {currentView === 'landing' && <Landing />}
-      {currentView === 'signin' && <SignIn setCurrentView={setCurrentView} />}
-      {currentView === 'signup' && <SignUp setCurrentView={setCurrentView} />}
-    </>
   );
 };
 

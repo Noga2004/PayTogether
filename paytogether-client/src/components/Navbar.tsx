@@ -1,50 +1,61 @@
-import { AppBar, Box, Button, Stack, Toolbar, Typography } from "@mui/material";
+import React from 'react';
+import { AppBar, Toolbar, Box, Typography, Stack, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
-    setCurrentView: (view: 'landing' | 'signup' | 'signin') => void;
+  showAuthButtons?: boolean;
 }
 
-const Navbar = ({ setCurrentView }: NavbarProps) => {
-    return <AppBar 
-        position="static" 
-        elevation={0} 
-        sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}
-      >
-        <Toolbar sx={{ justifyContent: 'space-between', py: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ width: 36, height: 36, position: 'relative' }}>
-              <Box sx={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                bgcolor: '#8B9D83',
-                position: 'absolute',
-                left: 0,
-                top: 4
-              }} />
-              <Box sx={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                bgcolor: '#B8A9D4',
-                position: 'absolute',
-                right: 0,
-                top: 0
-              }} />
-            </Box>
-            <Typography variant="h6" sx={{ color: '#000', fontWeight: 600 }}>
-              PayTogether
-            </Typography>
+const Navbar: React.FC<NavbarProps> = ({ showAuthButtons = true }) => {
+  const navigate = useNavigate();
+
+  return (
+    <AppBar 
+      position="static" 
+      elevation={0} 
+      sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between', py: 1.5 }}>
+        <Box 
+          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
+          onClick={() => navigate('/')}
+        >
+          {/* Logo with overlapping circles */}
+          <Box sx={{ width: 36, height: 36, position: 'relative' }}>
+            <Box sx={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              bgcolor: '#8B9D83',
+              position: 'absolute',
+              left: 0,
+              top: 4
+            }} />
+            <Box sx={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              bgcolor: '#B8A9D4',
+              position: 'absolute',
+              right: 0,
+              top: 0
+            }} />
           </Box>
+          <Typography variant="h6" sx={{ color: '#000', fontWeight: 600 }}>
+            pay Together
+          </Typography>
+        </Box>
+        
+        {showAuthButtons && (
           <Stack direction="row" spacing={2}>
             <Button 
-              onClick={() => setCurrentView('signin')}
+              onClick={() => navigate('/signin')}
               sx={{ color: '#666', textTransform: 'none', fontWeight: 500 }}
             >
               Sign In
             </Button>
             <Button 
-              onClick={() => setCurrentView('signup')}
+              onClick={() => navigate('/signup')}
               variant="contained"
               sx={{ 
                 bgcolor: '#8B9D83',
@@ -57,8 +68,10 @@ const Navbar = ({ setCurrentView }: NavbarProps) => {
               Sign Up
             </Button>
           </Stack>
-        </Toolbar>
-      </AppBar>
+        )}
+      </Toolbar>
+    </AppBar>
+  );
 };
 
 export default Navbar;
