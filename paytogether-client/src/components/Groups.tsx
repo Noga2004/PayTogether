@@ -1,57 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Container, 
   Typography, 
   Button, 
   Card,
-  IconButton
+  IconButton,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { Plus, Users, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
-
-interface Group {
-  id: string;
-  name: string;
-  membersCount: number;
-  totalSpent: number;
-  lastActivity: string;
-}
+import CreateGroupDialog from './CreateGroupDialog';
+import { groupsService, Group } from '../services/groupsService';
 
 const GroupsPage: React.FC = () => {
   const navigate = useNavigate();
-  
-  const [groups] = useState<Group[]>([
-    {
-      id: '1',
-      name: 'Copenhagen Trip',
-      membersCount: 4,
-      totalSpent: 1240.50,
-      lastActivity: '2h ago'
-    },
-    {
-      id: '2',
-      name: 'Apartment 4B',
-      membersCount: 3,
-      totalSpent: 450.00,
-      lastActivity: '1d ago'
-    },
-    {
-      id: '3',
-      name: 'Friday Dinner Club',
-      membersCount: 6,
-      totalSpent: 890.25,
-      lastActivity: '3d ago'
-    },
-    {
-      id: '4',
-      name: 'Ski Weekend',
-      membersCount: 8,
-      totalSpent: 2100.00,
-      lastActivity: '1w ago'
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      const data = await groupsService.getAll();
+      setGroups(data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load groups');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const handleGroupCreated = () => {
+    fetchGroups();
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -77,6 +66,7 @@ const GroupsPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<Plus size={20} />}
+            onClick={() => setDialogOpen(true)}
             sx={{
               bgcolor: '#8B9D83',
               px: 4,
@@ -96,29 +86,49 @@ const GroupsPage: React.FC = () => {
           </Button>
         </Box>
 
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-          gap: 3
-        }}>
-          {groups.map((group) => (
-            <Card
-              key={group.id}
-              elevation={0}
-              sx={{
-                p: 4,
-                border: '1px solid #e5e5e5',
-                borderRadius: 3,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: '#8B9D83',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  transform: 'translateY(-2px)'
-                }
-              }}
-              onClick={() => navigate(`/groups/${group.id}`)}
-            >
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress sx={{ color: '#8B9D83' }} />
+          </Box>
+        ) : groups.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography variant="h6" sx={{ color: '#666', mb: 2 }}>
+              No groups yet
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#999' }}>
+              Create your first group to start sharing expenses
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+            gap: 3
+          }}>
+            {groups.map((group) => (
+              <Card
+                key={group.id}
+                elevation={0}
+                sx={{
+                  p: 4,
+                  border: '1px solid #e5e5e5',
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: '#8B9D83',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+                onClick={() => navigate(`/groups/${group.id}`)}
+              >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
                   <Box
                     sx={{
@@ -178,6 +188,7 @@ const GroupsPage: React.FC = () => {
 
           <Card
             elevation={0}
+            onClick={() => setDialogOpen(true)}
             sx={{
               p: 4,
                 border: '2px dashed #e0e0e0',
@@ -214,7 +225,8 @@ const GroupsPage: React.FC = () => {
                 Create a new group
               </Typography>
             </Card>
-        </Box>
+          </Box>
+        )}
       </Container>
 
       <Box sx={{ bgcolor: 'white', py: 4, mt: 8, borderTop: '1px solid #e0e0e0' }}>
@@ -224,6 +236,12 @@ const GroupsPage: React.FC = () => {
           </Typography>
         </Container>
       </Box>
+
+      <CreateGroupDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onGroupCreated={handleGroupCreated}
+      />
     </Box>
   );
 };
