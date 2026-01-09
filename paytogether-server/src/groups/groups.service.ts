@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Group } from './entities/group.entity';
@@ -26,6 +26,7 @@ export class GroupsService {
     const group = this.groupsRepository.create({
       name: createGroupDto.name,
       description: createGroupDto.description,
+      createdBy: user,
       members: [user],
     });
 
@@ -43,6 +44,7 @@ export class GroupsService {
       .leftJoin('group.members', 'member')
       .where('member.id = :userId', { userId })
       .leftJoinAndSelect('group.members', 'allMembers')
+      .leftJoinAndSelect('group.createdBy', 'createdBy')
       .orderBy('group.updatedAt', 'DESC')
       .getMany();
 
@@ -55,6 +57,11 @@ export class GroupsService {
           membersCount: group.members.length,
           totalSpent,
           lastActivity: this.formatLastActivity(group.updatedAt),
+          createdBy: {
+            id: group.createdBy.id,
+            name: group.createdBy.fullName,
+            email: group.createdBy.email,
+          },
         };
       })
     );
@@ -66,6 +73,7 @@ export class GroupsService {
     const group = await this.groupsRepository
       .createQueryBuilder('group')
       .leftJoinAndSelect('group.members', 'member')
+      .leftJoinAndSelect('group.createdBy', 'createdBy')
       .where('group.id = :id', { id })
       .getOne();
 
@@ -102,6 +110,11 @@ export class GroupsService {
       lastActivity: this.formatLastActivity(group.updatedAt),
       members: membersWithBalance,
       settlements,
+      createdBy: {
+        id: group.createdBy.id,
+        name: group.createdBy.fullName,
+        email: group.createdBy.email,
+      },
     };
   }
 
@@ -265,5 +278,24 @@ export class GroupsService {
     }
 
     return settlements;
+  }
+
+  async delete(groupId: string, userId: string): Promise<void> {
+    const group = await this.groupsRepository
+      .createQueryBuilder('group')
+      .leftJoinAndSelect('group.createdBy', 'createdBy')
+      .where('group.id = :groupId', { groupId })
+      .getOne();
+
+    if (!group) {
+      throw new NotFoundException('Group not found');
+    }
+
+    // Only the person who created the group can delete it
+    if (group.createdBy.id !== userId) {
+      throw new ForbiddenException('You do not have permission to delete this group. Only the owner can delete it.');
+    }
+
+    await this.groupsRepository.remove(group);
   }
 }

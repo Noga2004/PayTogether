@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, ManyToOne, JoinTable, OneToMany } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('groups')
@@ -11,6 +11,9 @@ export class Group {
 
   @Column({ nullable: true })
   description: string;
+
+  @ManyToOne(() => User)
+  createdBy: User;
 
   @ManyToMany(() => User)
   @JoinTable({
