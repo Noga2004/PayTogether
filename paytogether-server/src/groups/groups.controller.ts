@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Param } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -19,7 +19,12 @@ export class GroupsController {
   }
 
   @Get(':id')
-  findOne(@Request() req) {
-    return this.groupsService.findOne(req.params.id, req.user.userId);
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.groupsService.findOne(id, req.user.userId);
+  }
+
+  @Post(':id/members')
+  addMember(@Param('id') id: string, @Body('email') email: string, @Request() req) {
+    return this.groupsService.addMember(id, email, req.user.userId);
   }
 }

@@ -4,8 +4,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { GroupsModule } from './groups/groups.module';
+import { ExpensesModule } from './expenses/expenses.module';
 import { User } from './users/entities/user.entity';
 import { Group } from './groups/entities/group.entity';
+import { Expense } from './expenses/entities/expense.entity';
 
 @Module({
   imports: [
@@ -21,7 +23,7 @@ import { Group } from './groups/entities/group.entity';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_NAME'),
-        entities: [User, Group],
+        entities: [User, Group, Expense],
         synchronize: true, 
       }),
       inject: [ConfigService],
@@ -29,6 +31,7 @@ import { Group } from './groups/entities/group.entity';
     AuthModule,
     UsersModule,
     GroupsModule,
+    ExpensesModule,
   ],
 })
 export class AppModule {}

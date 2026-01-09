@@ -17,4 +17,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Add response interceptor to handle errors properly
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.log('API Error intercepted:', error);
+    console.log('Error response:', error.response);
+    console.log('Error data:', error.response?.data);
+    // Re-throw the error so it can be caught by the calling code
+    return Promise.reject(error);
+  }
+);
+
 export default api;
