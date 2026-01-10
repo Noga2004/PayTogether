@@ -9,24 +9,49 @@ import {
   Divider,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import { Filter, Download, Receipt } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from './Navbar';
 import { expensesService, MonthGroup } from '../services/expensesService';
+import { groupsService } from '../services/groupsService';
 
 const ExpensesPage: React.FC = () => {
   const navigate = useNavigate();
   const [monthGroups, setMonthGroups] = useState<MonthGroup[]>([]);
+  const [filteredMonthGroups, setFilteredMonthGroups] = useState<MonthGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [groups, setGroups] = useState<any[]>([]);
+  
+  // Filter states
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [minAmount, setMinAmount] = useState<string>('');
+  const [maxAmount, setMaxAmount] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
 
   const fetchExpenses = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await expensesService.getAll();
-      setMonthGroups(data);
+      const [expensesData, groupsData] = await Promise.all([
+        expensesService.getAll(),
+        groupsService.getAll()
+      ]);
+      setMonthGroups(expensesData);
+      setFilteredMonthGroups(expensesData);
+      setGroups(groupsData);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load expenses');
       console.error('Error fetching expenses:', err);
@@ -38,6 +63,80 @@ const ExpensesPage: React.FC = () => {
   useEffect(() => {
     fetchExpenses();
   }, []);
+
+  const applyFilters = () => {
+    let filtered = [...monthGroups];
+    
+    // Filter by group
+    if (selectedGroup !== 'all') {
+      filtered = filtered.map(monthGroup => ({
+        ...monthGroup,
+        expenses: monthGroup.expenses.filter(exp => exp.group === selectedGroup),
+        total: monthGroup.expenses
+          .filter(exp => exp.group === selectedGroup)
+          .reduce((sum, exp) => sum + exp.amount, 0)
+      })).filter(monthGroup => monthGroup.expenses.length > 0);
+    }
+    
+    // Filter by amount
+    filtered = filtered.map(monthGroup => ({
+      ...monthGroup,
+      expenses: monthGroup.expenses.filter(exp => {
+        const matchesMin = minAmount === '' || exp.amount >= parseFloat(minAmount);
+        const matchesMax = maxAmount === '' || exp.amount <= parseFloat(maxAmount);
+        return matchesMin && matchesMax;
+      }),
+      total: monthGroup.expenses
+        .filter(exp => {
+          const matchesMin = minAmount === '' || exp.amount >= parseFloat(minAmount);
+          const matchesMax = maxAmount === '' || exp.amount <= parseFloat(maxAmount);
+          return matchesMin && matchesMax;
+        })
+        .reduce((sum, exp) => sum + exp.amount, 0)
+    })).filter(monthGroup => monthGroup.expenses.length > 0);
+    
+    setFilteredMonthGroups(filtered);
+    setFilterDialogOpen(false);
+  };
+
+  const clearFilters = () => {
+    setSelectedGroup('all');
+    setMinAmount('');
+    setMaxAmount('');
+    setDateFrom('');
+    setDateTo('');
+    setFilteredMonthGroups(monthGroups);
+    setFilterDialogOpen(false);
+  };
+
+  const exportToCSV = () => {
+    // Prepare CSV data
+    let csvContent = 'Date,Description,Amount,Paid By,Group\n';
+    
+    filteredMonthGroups.forEach(monthGroup => {
+      monthGroup.expenses.forEach(expense => {
+        const row = [
+          expense.date,
+          `"${expense.description}"`,
+          expense.amount,
+          `"${expense.paidBy}"`,
+          `"${expense.group}"`
+        ].join(',');
+        csvContent += row + '\n';
+      });
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `expenses_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -64,6 +163,7 @@ const ExpensesPage: React.FC = () => {
             <Button
               startIcon={<Filter size={18} />}
               variant="outlined"
+              onClick={() => setFilterDialogOpen(true)}
               sx={{
                 color: '#666',
                 borderColor: '#e0e0e0',
@@ -83,6 +183,8 @@ const ExpensesPage: React.FC = () => {
             <Button
               startIcon={<Download size={18} />}
               variant="outlined"
+              onClick={exportToCSV}
+              disabled={filteredMonthGroups.length === 0}
               sx={{
                 color: '#666',
                 borderColor: '#e0e0e0',
@@ -130,7 +232,7 @@ const ExpensesPage: React.FC = () => {
           </Card>
         ) : (
           <Stack spacing={4}>
-            {monthGroups.map((monthGroup) => (
+            {filteredMonthGroups.map((monthGroup) => (
             <Box key={monthGroup.month}>
               <Box sx={{ 
                 display: 'flex', 
@@ -234,6 +336,91 @@ const ExpensesPage: React.FC = () => {
           </Box>
         )}
       </Container>
+
+      {/* Filter Dialog */}
+      <Dialog 
+        open={filterDialogOpen} 
+        onClose={() => setFilterDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.5rem' }}>
+          Filter Expenses
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Group</InputLabel>
+              <Select
+                value={selectedGroup}
+                label="Group"
+                onChange={(e) => setSelectedGroup(e.target.value)}
+              >
+                <MenuItem value="all">All Groups</MenuItem>
+                {groups.map(group => (
+                  <MenuItem key={group.id} value={group.name}>{group.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField
+                label="Min Amount"
+                type="number"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                placeholder="0.00"
+                InputProps={{
+                  startAdornment: <Typography sx={{ mr: 1, color: '#666' }}>$</Typography>,
+                }}
+              />
+              <TextField
+                label="Max Amount"
+                type="number"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                placeholder="0.00"
+                InputProps={{
+                  startAdornment: <Typography sx={{ mr: 1, color: '#666' }}>$</Typography>,
+                }}
+              />
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={clearFilters}
+            sx={{ 
+              textTransform: 'none',
+              color: '#666'
+            }}
+          >
+            Clear Filters
+          </Button>
+          <Button 
+            onClick={() => setFilterDialogOpen(false)}
+            sx={{ 
+              textTransform: 'none',
+              color: '#666'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={applyFilters}
+            variant="contained"
+            sx={{ 
+              bgcolor: '#8B9D83',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: '#7a8c72'
+              }
+            }}
+          >
+            Apply Filters
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Box sx={{ bgcolor: 'white', py: 4, mt: 8, borderTop: '1px solid #e0e0e0' }}>
         <Container>

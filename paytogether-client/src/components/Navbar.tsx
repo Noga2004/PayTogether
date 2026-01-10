@@ -44,14 +44,19 @@ const Navbar: React.FC<NavbarProps> = ({ showAuthButtons = true, showNavigation 
 
   return (
     <AppBar 
-      position="static" 
+      position="sticky" 
       elevation={0} 
-      sx={{ bgcolor: 'white', borderBottom: '1px solid #e0e0e0' }}
+      sx={{ 
+        bgcolor: 'white', 
+        borderBottom: '1px solid #e0e0e0',
+        top: 0,
+        zIndex: 1100
+      }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', py: 1.5, px: { xs: 2, md: 4 } }}>
         <Box 
           sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
-          onClick={() => navigate(showNavigation ? '/groups' : '/')}
+          onClick={() => navigate('/')}
         >
           <Box sx={{ width: 36, height: 36, position: 'relative' }}>
             <Box sx={{
@@ -204,10 +209,6 @@ const Navbar: React.FC<NavbarProps> = ({ showAuthButtons = true, showNavigation 
                     </Typography>
                   </Box>
                   <Divider />
-                  <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }}>
-                    <User size={18} style={{ marginRight: 8 }} />
-                    Profile
-                  </MenuItem>
                   <MenuItem onClick={handleLogout}>
                     <LogOut size={18} style={{ marginRight: 8 }} />
                     Sign Out

@@ -32,6 +32,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import TopBar from './Navbar';
 import { groupsService, GroupDetail } from '../services/groupsService';
 import { expensesService, Expense } from '../services/expensesService';
+import { authService } from '../services/authService';
 
 const GroupDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -122,14 +123,12 @@ const GroupDetailPage: React.FC = () => {
       console.log('Error response:', err.response);
       console.log('Error data:', err.response?.data);
       
-      // NestJS returns errors in format: { statusCode, message, error }
       const errorMessage = err.response?.data?.message || 
                           err.message || 
                           'Failed to delete expense';
       
       console.log('Showing error message:', errorMessage);
       
-      // Show both alert and snackbar to ensure user sees it
       alert(errorMessage);
       
       setSnackbar({ 
@@ -139,6 +138,40 @@ const GroupDetailPage: React.FC = () => {
       });
     }
   };
+
+  const handleDeleteGroup = async () => {
+    if (!window.confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log('Attempting to delete group:', groupId);
+      await groupsService.delete(groupId!);
+      console.log('Delete successful');
+      alert('Group deleted successfully');
+      navigate('/groups');
+    } catch (err: any) {
+      console.log('Delete failed:', err);
+      console.log('Error response:', err.response);
+      console.log('Error data:', err.response?.data);
+      
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          'Failed to delete group';
+      
+      console.log('Showing error message:', errorMessage);
+      alert(errorMessage);
+      
+      setSnackbar({ 
+        open: true, 
+        message: errorMessage, 
+        severity: 'error' 
+      });
+    }
+  };
+
+  const currentUser = authService.getCurrentUser();
+  const isOwner = group?.createdBy?.id === currentUser?.id;
 
   if (loading) {
     return (
@@ -281,20 +314,22 @@ const GroupDetailPage: React.FC = () => {
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
                 Members
               </Typography>
-              <Button
-                startIcon={<UserPlus size={18} />}
-                onClick={() => setOpenAddMember(true)}
-                sx={{
-                  color: '#8B9D83',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  '&:hover': {
-                    bgcolor: 'rgba(139, 157, 131, 0.08)'
-                  }
-                }}
-              >
-                Add Member
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  startIcon={<UserPlus size={18} />}
+                  onClick={() => setOpenAddMember(true)}
+                  sx={{
+                    color: '#8B9D83',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    '&:hover': {
+                      bgcolor: 'rgba(139, 157, 131, 0.08)'
+                    }
+                  }}
+                >
+                  Add Member
+                </Button>
+              </Stack>
             </Box>
 
             <Card

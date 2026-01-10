@@ -7,13 +7,15 @@ import {
   Card,
   IconButton,
   CircularProgress,
-  Alert
+  Alert,
+  Snackbar
 } from '@mui/material';
-import { Plus, Users, ArrowRight } from 'lucide-react';
+import { Plus, Users, ArrowRight, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import CreateGroupDialog from './CreateGroupDialog';
 import { groupsService, Group } from '../services/groupsService';
+import { authService } from '../services/authService';
 
 const GroupsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +23,9 @@ const GroupsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  
+  const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
     fetchGroups();
@@ -30,6 +35,8 @@ const GroupsPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await groupsService.getAll();
+      console.log('Fetched groups:', data);
+      console.log('Current user:', currentUser);
       setGroups(data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load groups');
@@ -40,6 +47,29 @@ const GroupsPage: React.FC = () => {
 
   const handleGroupCreated = () => {
     fetchGroups();
+  };
+
+  const handleDeleteGroup = async (groupId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card click navigation
+    
+    if (!window.confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await groupsService.delete(groupId);
+      setGroups(groups.filter(g => g.id !== groupId));
+      setSnackbar({ open: true, message: 'Group deleted successfully', severity: 'success' });
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          'Failed to delete group';
+      setSnackbar({ 
+        open: true, 
+        message: errorMessage, 
+        severity: 'error' 
+      });
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -111,7 +141,19 @@ const GroupsPage: React.FC = () => {
             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
             gap: 3
           }}>
-            {groups.map((group) => (
+            {groups.map((group) => {
+              const isOwner = currentUser?.id === group.createdBy.id;
+              console.log(`Group ${group.name}:`, {
+                groupCreatedById: group.createdBy.id,
+                groupCreatedByIdType: typeof group.createdBy.id,
+                currentUserId: currentUser?.id,
+                currentUserIdType: typeof currentUser?.id,
+                isOwner,
+                strictEqual: currentUser?.id === group.createdBy.id,
+                looseEqual: currentUser?.id == group.createdBy.id
+              });
+              
+              return (
               <Card
                 key={group.id}
                 elevation={0}
@@ -143,12 +185,27 @@ const GroupsPage: React.FC = () => {
                   >
                     <Users size={28} style={{ color: '#B8A9D4' }} />
                   </Box>
-                  <Typography variant="body2" sx={{ color: '#999', fontSize: '0.875rem' }}>
-                    {group.lastActivity}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#999', fontSize: '0.875rem' }}>
+                      {group.lastActivity}
+                    </Typography>
+                    {isOwner && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleDeleteGroup(group.id, e)}
+                        sx={{
+                          color: '#d32f2f',
+                          '&:hover': {
+                            bgcolor: 'rgba(211, 47, 47, 0.08)'
+                          }
+                        }}
+                      >
+                        <Trash2 size={18} />
+                      </IconButton>
+                    )}
+                  </Box>
                 </Box>
 
-                {/* Group Info */}
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: '#000' }}>
                   {group.name}
                 </Typography>
@@ -156,7 +213,6 @@ const GroupsPage: React.FC = () => {
                   {group.membersCount} members
                 </Typography>
 
-                {/* Total Spent */}
                 <Box sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -184,7 +240,8 @@ const GroupsPage: React.FC = () => {
                   </IconButton>
                 </Box>
               </Card>
-          ))}
+            );
+          })}
 
           <Card
             elevation={0}
@@ -242,6 +299,21 @@ const GroupsPage: React.FC = () => {
         onClose={() => setDialogOpen(false)}
         onGroupCreated={handleGroupCreated}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

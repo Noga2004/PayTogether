@@ -26,7 +26,7 @@ const SignUp: React.FC = () => {
 
     try {
       await authService.register({ email, fullName, password });
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

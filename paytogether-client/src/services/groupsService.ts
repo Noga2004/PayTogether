@@ -6,6 +6,11 @@ export interface Group {
   membersCount: number;
   totalSpent: number;
   lastActivity: string;
+  createdBy: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface GroupDetail {
@@ -34,6 +39,11 @@ export interface GroupDetail {
   membersCount: number;
   totalSpent: number;
   lastActivity: string;
+  createdBy: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface CreateGroupData {
@@ -65,5 +75,9 @@ export const groupsService = {
   async addMember(groupId: string, data: AddMemberData): Promise<GroupDetail> {
     const response = await api.post(`/groups/${groupId}/members`, data);
     return response.data;
+  },
+
+  async delete(id: string): Promise<void> {
+    await api.delete(`/groups/${id}`);
   },
 };

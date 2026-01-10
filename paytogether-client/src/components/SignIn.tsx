@@ -19,7 +19,7 @@ const SignIn: React.FC = () => {
 
     try {
       await authService.login({ email, password });
-      navigate('/groups');
+      navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -134,17 +134,6 @@ const SignIn: React.FC = () => {
                       color: '#333'
                     }}
                   />
-                </Box>
-                <Box sx={{ textAlign: 'right', mt: 1.5 }}>
-                  <Button sx={{ 
-                    color: '#666', 
-                    textTransform: 'none',
-                    p: 0,
-                    fontSize: '0.9rem',
-                    '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' }
-                  }}>
-                    Forgot password?
-                  </Button>
                 </Box>
               </Box>
 

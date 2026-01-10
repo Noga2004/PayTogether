@@ -3,13 +3,15 @@ import { Box, Container, Typography, Button, Card, Avatar, Stack } from '@mui/ma
 import { Users, Receipt, PieChart, ArrowRight, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import { authService } from '../services/authService';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const user = authService.getCurrentUser();
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
-      <Navbar showAuthButtons={true} />
+      <Navbar showAuthButtons={!user} showNavigation={!!user} />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 14 }, pb: 8 }}>
         <Box sx={{ textAlign: 'center', position: 'relative' }}>
